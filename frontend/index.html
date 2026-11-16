@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoopBridge — Το ξεκίνημά σου</title>
+<style>
+  :root {
+    --blue: #2563eb; --blue-light: #eff6ff; --blue-dark: #1e40af;
+    --green: #16a34a; --green-light: #f0fdf4;
+    --red: #dc2626; --red-light: #fef2f2;
+    --amber: #d97706; --amber-light: #fffbeb;
+    --gray: #6b7280; --gray-light: #f3f4f6; --text: #1f2937;
+    --radius: 14px; --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #f8fafc; color: var(--text); line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+
+  .header { text-align: center; padding: 2rem 0 1rem; }
+  .header h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; }
+  .header h1 span { background: linear-gradient(135deg, #2563eb, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .header p { color: var(--gray); margin-top: 0.3rem; }
+
+  /* Progress bar */
+  .progress-wrap { margin: 1.5rem 0 2rem; }
+  .progress-bar { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.4s ease; }
+  .step-labels { display: flex; justify-content: space-between; margin-top: 0.5rem; font-size: 0.75rem; color: var(--gray); }
+  .step-labels span.active { color: var(--blue); font-weight: 700; }
+
+  /* Card */
+  .card {
+    background: white; border-radius: var(--radius); padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    border: 1px solid #f1f5f9;
+  }
+  .card h2 { font-size: 1.25rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem; }
+  .card p { margin-bottom: 0.8rem; color: #4b5563; font-size: 0.95rem; }
+  .card ol, .card ul { margin-left: 1.3rem; margin-bottom: 1rem; color: #4b5563; font-size: 0.9rem; }
+  .card li { margin-bottom: 0.35rem; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-pc { background: #dbeafe; color: #1e40af; }
+  .badge-mobile { background: #dcfce7; color: #166534; }
+  .badge-both { background: #fef3c7; color: #92400e; }
+
+  /* Form */
+  .form-group { margin-bottom: 1.2rem; }
+  .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; }
+  .form-group .sub { font-size: 0.8rem; color: var(--gray); font-weight: 400; }
+  .input-row { display: flex; gap: 0.5rem; align-items: center; }
+  .input-row input, .input-row textarea { flex: 1; }
+  input, textarea, select {
+    width: 100%; padding: 0.7rem 0.9rem;
+    border: 2px solid #e5e7eb; border-radius: var(--radius-sm);
+    font-size: 1rem; font-family: inherit; transition: border-color 0.2s;
+    background: #fafbfc;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); background: white; }
+  textarea { min-height: 100px; resize: vertical; font-family: monospace; font-size: 0.8rem; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem; border: none; border-radius: var(--radius-sm);
+    font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%;
+  }
+  .btn-primary { background: var(--blue); color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+  .btn-secondary { background: var(--gray-light); color: var(--text); width: auto; }
+  .btn-secondary:hover { background: #e5e7eb; }
+  .btn-sm { padding: 0.45rem 0.9rem; font-size: 0.85rem; width: auto; }
+  .btn-copy {
+    background: var(--green); color: white; border: none; padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .btn-copy:hover { background: #15803d; }
+  .btn-copy.copied { background: #059669; }
+
+  /* Status boxes */
+  .status { padding: 1rem 1.2rem; border-radius: var(--radius-sm); margin: 1rem 0; font-size: 0.9rem; line-height: 1.5; }
+  .status-success { background: var(--green-light); color: var(--green); border-left: 4px solid var(--green); }
+  .status-error { background: var(--red-light); color: var(--red); border-left: 4px solid var(--red); }
+  .status-info { background: var(--blue-light); color: var(--blue-dark); border-left: 4px solid var(--blue); }
+  .status-warn { background: var(--amber-light); color: var(--amber); border-left: 4px solid var(--amber); }
+  .status strong { display: block; margin-bottom: 0.2rem; }
+
+  /* Copy box */
+  .copy-box {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: #f0fdf4; padding: 0.7rem 1rem; border-radius: var(--radius-sm);
+    border: 1px solid #bbf7d0; margin: 0.5rem 0;
+  }
+  .copy-box code { flex: 1; word-break: break-all; font-size: 0.8rem; }
+
+  /* QR Code */
+  .qr-wrap { text-align: center; padding: 1rem; }
+  .qr-wrap canvas { border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem; background: white; }
+  .qr-wrap p { margin-top: 0.5rem; font-size: 0.85rem; color: var(--gray); }
+
+  /* Spinner */
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #e5e7eb; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Help text */
+  .help { font-size: 0.82rem; color: var(--gray); margin-top: 0.25rem; }
+
+  /* Section divider */
+  .divider { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
+
+  /* Chat Widget */
+  #chat-widget { position: fixed; bottom: 1rem; right: 1rem; z-index: 1001; }
+  #chat-toggle { background: var(--blue); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 24px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  #chat-toggle:hover { background: #1d4ed8; }
+  #chat-box { flex-direction: column; width: 360px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); margin-top: 0.5rem; overflow: hidden; }
+  #chat-box.open { display: flex !important; }
+  #chat-msgs { flex: 1; overflow-y: auto; padding: 1rem; max-height: 380px; }
+  .chat-msg { margin-bottom: 0.8rem; padding: 0.6rem 0.9rem; border-radius: 12px; font-size: 0.88rem; line-height: 1.5; max-width: 90%; }
+  .chat-msg.user { background: var(--blue); color: white; align-self: flex-end; margin-left: auto; }
+  .chat-msg.assistant { background: var(--gray-light); color: var(--text); }
+  #chat-input-row { display: flex; border-top: 1px solid #e5e7eb; padding: 0.5rem; }
+  #chat-input { flex: 1; border: none; padding: 0.6rem; font-size: 0.9rem; border-radius: 8px; background: var(--gray-light); }
+  #chat-input:focus { outline: none; }
+  #chat-input-row button { background: var(--blue); color: white; border: none; padding: 0.5rem 0.9rem; border-radius: 8px; margin-left: 0.5rem; cursor: pointer; font-size: 1.1rem; }
+
+  /* Guide Widget */
+  #guide-widget { position: fixed; bottom: 1rem; left: 1rem; z-index: 1000; }
+  #guide-toggle { background: var(--green); color: white; border: none; padding: 0.65rem 1.1rem; border-radius: 24px; font-size: 0.9rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+  #guide-toggle:hover { background: #15803d; }
+  #guide-box { flex-direction: column; width: 400px; max-height: 550px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); margin-top: 0.5rem; overflow: hidden; }
+  #guide-box.open { display: flex !important; }
+  #guide-content { flex: 1; overflow-y: auto; padding: 1.2rem; max-height: 480px; font-size: 0.88rem; line-height: 1.6; color: var(--text); }
+  #guide-content h3 { font-size: 1rem; margin: 1rem 0 0.4rem; color: var(--blue); }
+  #guide-content h3:first-child { margin-top: 0; }
+  #guide-content ol { padding-left: 1.2rem; margin: 0.4rem 0; }
+  #guide-content li { margin-bottom: 0.4rem; }
+  #guide-content strong { color: #1f2937; }
+  #guide-content .tip { background: #fef3c7; padding: 0.5rem 0.7rem; border-radius: 6px; margin: 0.4rem 0; font-size: 0.82rem; }
+  #guide-content .warn { background: #fee2e2; padding: 0.5rem 0.7rem; border-radius: 6px; margin: 0.4rem 0; font-size: 0.82rem; }
+  #guide-content a { color: var(--blue); }
+
+  @media (max-width: 480px) {
+    .container { padding: 0.8rem 0.8rem 5rem; }
+    .card { padding: 1.2rem; }
+    #chat-box, #guide-box { width: calc(100vw - 2rem); max-width: 400px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div class="header">
+    <h1><span>LoopBridge</span></h1>
+    <p>Το ξεκίνημά σου για automated insulin delivery</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="step-labels" id="stepLabels"></div>
+  </div>
+
+  <div class="card" id="content"></div>
+</div>
+
+<!-- CHAT WIDGET -->
+<div id="chat-widget">
+  <button id="chat-toggle" onclick="toggleChat()">💬 Βοήθεια AI</button>
+  <div id="chat-box" style="display:none;"><div id="chat-msgs"><div class="chat-msg assistant">👋 Είμαι ο τεχνικός βοηθός του LoopBridge. Ρώτα με ό,τι θες για AAPS, Nightscout, εγκατάσταση!</div></div>
+  <div id="chat-input-row"><input type="text" id="chat-input" placeholder="Ρώτα με κάτι τεχνικό..."><button onclick="askAI()">→</button></div></div>
+</div>
+
+<!-- GUIDE WIDGET -->
+<div id="guide-widget">
+  <button id="guide-toggle" onclick="toggleGuide()">📖 Οδηγός</button>
+  <div id="guide-box" style="display:none;"><div id="guide-content"></div></div>
+</div>
+
+<script>
+// ─── STATE ───
+const API = '/api';
+let token = localStorage.getItem('token');
+let currentStep = 0;
+const STEP_NAMES = ['Εγγραφή', 'Nightscout', 'GitHub', 'Κλειδιά', 'Χτίσιμο', 'Ολοκλήρωση'];
+
+const steps = [
+  { id:'register', render:renderRegister },
+  { id:'nightscout', render:renderNightscout },
+  { id:'github', render:renderGitHub },
+  { id:'secrets', render:renderSecrets },
+  { id:'build', render:renderBuild },
+  { id:'done', render:renderDone },
+];
+
+// ─── PROGRESS ───
+function updateProgress(idx) {
+  document.getElementById('progressFill').style.width = ((idx / (steps.length-1)) * 100) + '%';
+  document.getElementById('stepLabels').innerHTML = STEP_NAMES.map((n,i) =>
+    `<span class="${i===idx?'active':''}${i<idx?' style=color:var(--green)' :''}">${i<idx?'✓ ':''}${n}</span>`
+  ).join('');
+}
+
+async function gotoStep(idx) {
+  currentStep = idx;
+  updateProgress(idx);
+  document.getElementById('content').innerHTML = '<div style="text-align:center;padding:3rem;"><span class="spinner" style="width:32px;height:32px;"></span></div>';
+  try { await steps[idx].render(); } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="status status-error">Κάτι πήγε στραβά: ${e.message}<br><button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" onclick="gotoStep(${idx})">Δοκίμασε ξανά</button></div>`;
+  }
+}
+
+// ─── API ───
+async function api(method, path, body = null) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  const r = await fetch(API + path, { method, headers: h, body: body ? JSON.stringify(body) : null });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.detail || 'Σφάλμα');
+  return d;
+}
+
+// ─── STEP 0: REGISTER ───
+async function renderRegister() {
+  if (token) {
+    try {
+      const me = await api('GET', '/auth/me');
+      document.getElementById('content').innerHTML = `
+        <h2>👋 Καλωσόρισες${me.name ? ' ' + me.name : ''}</h2>
+        <p>Είσαι έτοιμος. Πάμε να φτιάξουμε το Nightscout σου.</p>
+        <button class="btn btn-primary" onclick="gotoStep(1)">Συνέχεια →</button>`;
+      return;
+    } catch(e) { token = null; localStorage.removeItem('token'); }
+  }
+  document.getElementById('content').innerHTML = `
+    <h2>🔐 Δημιούργησε λογαριασμό</h2>
+    <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="to@email.gr"></div>
+    <div class="form-group"><label>Όνομα <span class="sub">(προαιρετικό)</span></label><input type="text" id="reg-name" placeholder="Μαρία"></div>
+    <div class="form-group"><label>Κωδικός</label><input type="password" id="reg-pass" placeholder="τουλάχιστον 8 χαρακτήρες"></div>
+    <button class="btn btn-primary" onclick="doRegister()">Εγγραφή</button>
+    <p style="text-align:center;margin-top:1rem;font-size:0.9rem;">Έχεις ήδη λογαριασμό; <a href="#" onclick="showLogin()" style="color:var(--blue)">Σύνδεση</a></p>
+    <div id="reg-msg"></div>`;
+}
+async function doRegister() {
+  const email = document.getElementById('reg-email').value, pass = document.getElementById('reg-pass').value;
+  if (!email || !pass) return;
+  try {
+    const data = await api('POST', '/auth/register', { email, password: pass, name: document.getElementById('reg-name').value });
+    token = data.access_token; localStorage.setItem('token', token); gotoStep(1);
+  } catch(e) { document.getElementById('reg-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+function showLogin() {
+  document.getElementById('content').innerHTML = `
+    <h2>🔑 Σύνδεση</h2>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email"></div>
+    <div class="form-group"><label>Κωδικός</label><input type="password" id="login-pass"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Σύνδεση</button>
+    <p style="text-align:center;margin-top:1rem;"><a href="#" onclick="gotoStep(0)" style="color:var(--blue)">← Πίσω στην εγγραφή</a></p>
+    <div id="login-msg"></div>`;
+}
+async function doLogin() {
+  try {
+    const data = await api('POST', '/auth/login', { email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value });
+    token = data.access_token; localStorage.setItem('token', token); gotoStep(1);
+  } catch(e) { document.getElementById('login-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+
+// ─── STEP 1: NIGHTSCOUT ───
+async function renderNightscout() {
+  try {
+    const t = await api('GET', '/tenants/me');
+    document.getElementById('content').innerHTML = `
+      <h2><span class="badge badge-both">🌐 Web</span> ✅ Το Nightscout σου είναι έτοιμο</h2>
+      <div class="copy-box"><code>${t.url}</code><button class="btn-copy" onclick="copyText('${t.url}',this)">📋 Αντιγραφή</button></div>
+      <p class="status ${t.healthy?'status-success':'status-error'}" style="margin-top:0.5rem">${t.healthy?'🟢 Online':'🔴 Offline'}</p>
+      <p style="font-size:0.85rem;color:var(--gray);margin-top:0.5rem;">Μπορείς ήδη να συνδέσεις το xDrip+ ή το Dexcom Follow σου.</p>
+      <button class="btn btn-primary" onclick="gotoStep(2)">Συνέχεια →</button>`;
+    return;
+  } catch(e) {}
+  document.getElementById('content').innerHTML = `
+    <h2><span class="badge badge-both">🌐 Web</span> Το Nightscout σου, σε 60 δευτερόλεπτα</h2>
+    <p>Διάλεξε ένα subdomain. Θα είναι στο <strong>το-ονομά-σου.myloop.top</strong></p>
+    <div class="form-group"><label>Subdomain <span class="sub">(μόνο πεζά λατινικά και παύλες)</span></label>
+    <input type="text" id="ns-subdomain" placeholder="π.χ. maria" maxlength="30" pattern="[a-z0-9-]+"></div>
+    <button class="btn btn-primary" id="ns-btn" onclick="createNightscout()">Δημιουργία</button>
+    <div id="ns-msg"></div>`;
+}
+async function createNightscout() {
+  const subdomain = document.getElementById('ns-subdomain').value.toLowerCase().trim();
+  if (!subdomain) return;
+  const btn = document.getElementById('ns-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Δημιουργία...';
+  try {
+    const data = await api('POST', '/tenants', { subdomain });
+    document.getElementById('content').innerHTML = `
+      <h2>🎉 Το Nightscout σου είναι έτοιμο!</h2>
+      <div class="copy-box"><code>${data.url}</code><button class="btn-copy" onclick="copyText('${data.url}',this)">📋 Αντιγραφή</button></div>
+      <div class="copy-box" style="margin-top:0.5rem"><code style="font-size:0.75rem;">API Secret: ${data.api_secret}</code><button class="btn-copy" onclick="copyText('${data.api_secret}',this)">📋 Αντιγραφή</button></div>
+      <div class="status status-warn" style="margin-top:0.8rem"><strong>⚠️ Φύλαξε το API secret!</strong>Εμφανίζεται μόνο μία φορά. Θα το χρειαστείς για το xDrip+ και το AAPS.</div>
+      <button class="btn btn-primary" onclick="gotoStep(2)">Συνέχεια →</button>`;
+  } catch(e) { btn.disabled = false; btn.textContent = 'Δημιουργία'; document.getElementById('ns-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+
+// ─── STEP 2: GITHUB ───
+async function renderGitHub() {
+  try {
+    const s = await api('GET', '/wizard/github-status');
+    if (s.connected) {
+      document.getElementById('content').innerHTML = `
+        <h2><span class="badge badge-both">🌐 Web</span> ✅ GitHub συνδεδεμένο</h2>
+        <p>Συνδεδεμένος ως <strong>${s.login}</strong>.</p>
+        <button class="btn btn-primary" id="fork-btn" onclick="doFork()">Δημιουργία Fork →</button>
+        <div id="fork-msg"></div>`;
+      return;
+    }
+  } catch(e) {}
+  document.getElementById('content').innerHTML = `
+    <h2><span class="badge badge-both">🌐 Web</span> Σύνδεση με GitHub</h2>
+    <p>Το AAPS χτίζεται στον <strong>δικό σου δωρεάν λογαριασμό GitHub</strong>. Αν δεν έχεις, <a href="https://github.com/signup" target="_blank" style="color:var(--blue)">δημιούργησε έναν εδώ</a>.</p>
+    <p style="font-size:0.85rem;color:var(--gray);">Το APK ΔΕΝ διανέμεται — χτίζεται από εσένα για εσένα. Εμείς απλά σε ξεναγούμε.</p>
+    <button class="btn btn-primary" id="gh-btn" onclick="connectGitHub()">Σύνδεση με GitHub</button>
+    <div id="gh-msg"></div>`;
+}
+async function doFork() {
+  const btn = document.getElementById('fork-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Δημιουργία fork...';
+  try { await api('POST', '/wizard/fork'); gotoStep(3); }
+  catch(e) { document.getElementById('fork-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; btn.disabled = false; btn.textContent = 'Δημιουργία Fork →'; }
+}
+async function connectGitHub() {
+  const btn = document.getElementById('gh-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Άνοιγμα GitHub...';
+  try {
+    const data = await api('GET', '/auth/github/login');
+    const w = window.open(data.url, 'github-oauth', 'width=600,height=700');
+    window.addEventListener('message', function h(e) { if (e.data === 'github_connected') { window.removeEventListener('message', h); gotoStep(2); } });
+    document.getElementById('gh-msg').innerHTML = `<div class="status status-info">Αν το παράθυρο δεν άνοιξε, <a href="${data.url}" target="_blank" style="color:var(--blue)">πάτα εδώ</a>.<br>Όταν ολοκληρώσεις, <button class="btn btn-secondary btn-sm" onclick="gotoStep(2)" style="margin-top:0.5rem">Έλεγχος σύνδεσης</button></div>`;
+    btn.disabled = false; btn.textContent = 'Σύνδεση με GitHub';
+  } catch(e) { btn.disabled = false; btn.textContent = 'Σύνδεση με GitHub'; document.getElementById('gh-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+
+// ─── STEP 3: KEYS ───
+async function renderSecrets() {
+  document.getElementById('content').innerHTML = `
+    <h2><span class="badge badge-pc">💻 + 📱</span> Κλειδί υπογραφής & Google Drive</h2>
+
+    <!-- ΒΗΜΑ 1: KEYSTORE_SET -->
+    <div class="status status-info" style="margin-bottom:0;">
+      <strong>🔨 Βήμα 1 από 2 — KEYSTORE_SET</strong>
+      <span class="badge badge-pc" style="margin-left:0.5rem">💻 PC ή 📱</span>
+    </div>
+    <p style="font-size:0.85rem;color:var(--gray);margin:0.5rem 0;">
+      1. Άνοιξε <a href="/prepare-key.html" target="_blank" style="color:var(--blue)"><strong>αυτή τη σελίδα</strong></a><br>
+      2. Πάτα <strong>«Δημιουργία JKS»</strong> → <strong>«Copy»</strong><br>
+      3. Γύρνα εδώ και <strong>επικόλλησε</strong> (παρατεταμένο πάτημα → επικόλληση):
+    </p>
+    <div class="form-group">
+      <textarea id="ks-value" placeholder="Επικόλλησε το KEYSTORE_SET εδώ..." style="min-height:70px;"></textarea>
+    </div>
+    <button class="btn btn-primary" id="ks-save-btn" onclick="saveKS()" style="margin-bottom:1rem;">✅ Αποθήκευση KEYSTORE_SET</button>
+    <div id="ks-msg"></div>
+
+    <hr class="divider">
+
+    <!-- ΒΗΜΑ 2: GDRIVE_OAUTH2 -->
+    <div class="status status-info" style="margin-bottom:0;">
+      <strong>📱 Βήμα 2 από 2 — GDRIVE_OAUTH2</strong>
+      <span class="badge badge-mobile" style="margin-left:0.5rem">ΜΟΝΟ από κινητό</span>
+    </div>
+    <p style="font-size:0.85rem;color:var(--gray);margin:0.5rem 0;">
+      1. Κατέβασε <strong>File Manager Plus</strong> από το Play Store<br>
+      2. Άνοιξε το <a href="https://github.com/nightscout/aaps-ci-preparation/releases/download/release-v1.1.2/aaps-ci-preparation.html" target="_blank" style="color:var(--blue)">aaps-ci-preparation.html</a><br>
+      3. Άνοιξέ το με <strong>File Manager Plus → Chrome</strong><br>
+      4. Πάτα <strong>«Start Auth»</strong> → σύνδεση Google → <strong>«Copy»</strong><br>
+      5. Γύρνα εδώ και <strong>επικόλλησε</strong>:
+    </p>
+    <p style="font-size:0.85rem;color:var(--gray);margin:0.5rem 0;">Σκανάρετε το QR code:</p>
+    <div class="qr-wrap"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://github.com/nightscout/aaps-ci-preparation/releases/download/release-v1.1.2/aaps-ci-preparation.html" alt="QR Code" width="150" height="150" style="border:1px solid #e5e7eb;border-radius:8px;padding:0.5rem;background:white"></div>
+    <div class="form-group">
+      <textarea id="gd-value" placeholder="Επικόλλησε το GDRIVE_OAUTH2 εδώ..." style="min-height:70px;"></textarea>
+    </div>
+    <button class="btn btn-primary" id="gd-save-btn" onclick="saveGD()">✅ Αποθήκευση GDRIVE_OAUTH2</button>
+    <div id="gd-msg"></div>
+
+    <hr class="divider">
+
+    <button class="btn btn-primary" id="final-btn" onclick="finalSecrets()" disabled>🔒 Ολοκλήρωση και συνέχεια</button>
+    <div id="secrets-msg"></div>`;
+}
+
+let savedKS = false, savedGD = false;
+
+function saveKS() {
+  const val = document.getElementById('ks-value').value.trim();
+  if (!val) { document.getElementById('ks-msg').innerHTML = '<div class="status status-error">Επικόλλησε πρώτα το KEYSTORE_SET</div>'; return; }
+  savedKS = true;
+  document.getElementById('ks-save-btn').disabled = true;
+  document.getElementById('ks-save-btn').textContent = '✓ KEYSTORE_SET αποθηκεύτηκε';
+  document.getElementById('ks-save-btn').style.background = '#16a34a';
+  document.getElementById('ks-msg').innerHTML = '<div class="status status-success">✓ Αποθηκεύτηκε! Τώρα κάνε το Βήμα 2.</div>';
+  document.getElementById('ks-value').style.background = '#f0fdf4';
+  checkBoth();
+}
+
+function saveGD() {
+  const val = document.getElementById('gd-value').value.trim();
+  if (!val) { document.getElementById('gd-msg').innerHTML = '<div class="status status-error">Επικόλλησε πρώτα το GDRIVE_OAUTH2</div>'; return; }
+  savedGD = true;
+  document.getElementById('gd-save-btn').disabled = true;
+  document.getElementById('gd-save-btn').textContent = '✓ GDRIVE_OAUTH2 αποθηκεύτηκε';
+  document.getElementById('gd-save-btn').style.background = '#16a34a';
+  document.getElementById('gd-msg').innerHTML = '<div class="status status-success">✓ Αποθηκεύτηκε!</div>';
+  document.getElementById('gd-value').style.background = '#f0fdf4';
+  checkBoth();
+}
+
+function checkBoth() {
+  if (savedKS && savedGD) {
+    document.getElementById('final-btn').disabled = false;
+    document.getElementById('final-btn').textContent = '🔒 Ολοκλήρωση και συνέχεια →';
+    document.getElementById('final-btn').style.background = '#16a34a';
+  }
+}
+
+async function finalSecrets() {
+  const ks = document.getElementById('ks-value').value.trim();
+  const gd = document.getElementById('gd-value').value.trim();
+  try {
+    await api('POST', '/wizard/secrets', { keystore_set: ks, gdrive_oauth2: gd });
+    savedKS = false; savedGD = false;
+    gotoStep(4);
+  } catch(e) {
+    document.getElementById('secrets-msg').innerHTML = `<div class="status status-error">${e.message}</div>`;
+  }
+}
+
+// ─── STEP 4: BUILD ───
+async function renderBuild() {
+  document.getElementById('content').innerHTML = `
+    <h2><span class="badge badge-both">🌐 Web</span> Χτίσιμο του AAPS</h2>
+    <p>Πάτα το κουμπί για να ξεκινήσει. Θα πάρει <strong>20-40 λεπτά</strong>.</p>
+    <div class="form-group"><label>Έκδοση</label><select id="build-version"><option value="">Τελευταία (αυτόματα)</option></select></div>
+    <div class="form-group"><label>Variant</label><select id="build-variant"><option value="fullRelease">fullRelease (κανονική)</option><option value="aapsclientRelease">aapsclientRelease (caregiver)</option><option value="pumpcontrolRelease">pumpcontrolRelease</option></select></div>
+    <button class="btn btn-primary" onclick="startBuild()">🔨 Χτίσε το AAPS μου</button>
+    <div id="build-msg"></div>`;
+  try { const v = await api('GET', '/wizard/aaps-version'); document.getElementById('build-version').innerHTML += `<option value="${v.version}">${v.version}</option>`; } catch(e) {}
+}
+async function startBuild() {
+  const version = document.getElementById('build-version').value, variant = document.getElementById('build-variant').value;
+  try {
+    const data = await api('POST', '/wizard/build', { version, build_variant: variant });
+    document.getElementById('content').innerHTML = `
+      <h2>⚙️ Το εργοστάσιο δουλεύει...</h2>
+      <p>Χρειάζεται <strong>20-40 λεπτά</strong>. Μπορείς να κλείσεις τη σελίδα.</p>
+      <div style="text-align:center;padding:2rem;"><span class="spinner" style="width:40px;height:40px;"></span></div>
+      <div class="status status-info"><strong>Job ID:</strong> ${data.job_id}<br><strong>Έκδοση:</strong> ${data.version}<br><strong>Κατάσταση:</strong> ${data.status}</div>
+      <p style="font-size:0.85rem;color:var(--gray);">Το APK θα αποθηκευτεί στο <strong>Google Drive σου</strong> → φάκελος AAPS</p>
+      <button class="btn btn-secondary" onclick="pollBuild('${data.job_id}')" style="width:100%">🔄 Έλεγχος προόδου</button>
+      <div id="poll-msg"></div>`;
+  } catch(e) { document.getElementById('build-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+async function pollBuild(jobId) {
+  document.getElementById('poll-msg').innerHTML = '<span class="spinner"></span> Έλεγχος...';
+  try {
+    const data = await api('GET', '/wizard/build/' + jobId);
+    if (data.status === 'success') { document.getElementById('poll-msg').innerHTML = '<div class="status status-success">✅ Το build ολοκληρώθηκε!</div>'; gotoStep(5); }
+    else if (data.status === 'failure') { document.getElementById('poll-msg').innerHTML = `<div class="status status-error">Το build απέτυχε${data.error_code ? ': ' + data.error_code : ''}<br><button class="btn btn-secondary btn-sm" onclick="gotoStep(3)" style="margin-top:0.5rem">Πίσω στα κλειδιά</button></div>`; }
+    else { document.getElementById('poll-msg').innerHTML = `<div class="status status-info">Κατάσταση: ${data.status}<br><button class="btn btn-secondary btn-sm" onclick="pollBuild('${jobId}')" style="margin-top:0.5rem">Ξανα-έλεγχος</button></div>`; }
+  } catch(e) { document.getElementById('poll-msg').innerHTML = `<div class="status status-error">${e.message}</div>`; }
+}
+
+// ─── STEP 5: DONE ───
+async function renderDone() {
+  let nsUrl = ''; try { const t = await api('GET', '/tenants/me'); nsUrl = t.url; } catch(e) {}
+  document.getElementById('content').innerHTML = `
+    <h2>🎉 Το AAPS είναι έτοιμο!</h2>
+    <div class="status status-success"><strong>📱 Βήμα 1 — Εγκατάσταση στο κινητό</strong>
+      1. Κατέβασε το APK από το <strong>Google Drive σου</strong> (φάκελος AAPS).<br>
+      2. Ενεργοποίησε «Άγνωστες πηγές» στις ρυθμίσεις Android.<br>
+      3. Εγκατέστησε το APK.<br>
+      4. Σύνδεσε το AAPS με το Nightscout σου: <code>${nsUrl}</code><br>
+      5. Ακολούθησε τα Objectives — ξεκλειδώνουν σταδιακά για ασφάλεια.
+    </div>
+    <p style="font-size:0.85rem;color:var(--gray);margin-top:0.5rem;">Όταν βγει νέα έκδοση, θα σε ειδοποιήσουμε για rebuild με ένα κλικ.</p>`;
+}
+
+// ─── CHAT ───
+function toggleChat() { const b = document.getElementById('chat-box'); const g = document.getElementById('guide-box'); if (b.style.display === 'flex') { b.style.display = 'none'; return; } g.style.display = 'none'; b.style.display = 'flex'; }
+async function askAI() {
+  const input = document.getElementById('chat-input'), query = input.value.trim(); if (!query) return;
+  addChatMsg('user', query); input.value = '';
+  const msgs = document.getElementById('chat-msgs'), loading = document.createElement('div');
+  loading.className = 'chat-msg assistant'; loading.innerHTML = '<span class="spinner"></span> Σκέφτομαι...';
+  msgs.appendChild(loading); msgs.scrollTop = msgs.scrollHeight;
+  try {
+    const r = await fetch(API + '/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({query}) });
+    const data = await r.json(); loading.remove();
+    let answer = (data.blocked ? '🚫 ' : '') + data.answer;
+    if (data.sources && data.sources.length) answer += '\n\n📚 ' + data.sources.map(s => `<a href="${s.url}" target="_blank" style="color:var(--blue)">${s.title}</a>`).join(', ');
+    addChatMsg('assistant', answer);
+  } catch(e) { loading.remove(); addChatMsg('assistant', 'Σφάλμα: ' + e.message); }
+}
+function addChatMsg(role, text) {
+  const d = document.createElement('div'); d.className = 'chat-msg ' + role; d.innerHTML = text.replace(/\n/g, '<br>');
+  document.getElementById('chat-msgs').appendChild(d); d.parentElement.scrollTop = d.parentElement.scrollHeight;
+}
+document.getElementById('chat-input').addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askAI(); } });
+
+// ─── GUIDE ───
+function toggleGuide() { const b = document.getElementById('guide-box'); const c = document.getElementById('chat-box'); if (b.style.display === 'flex') { b.style.display = 'none'; return; } c.style.display = 'none'; b.style.display = 'flex'; renderGuide(); }
+function renderGuide() {
+  document.getElementById('guide-content').innerHTML = `
+    <h3>📋 Τι είναι το LoopBridge;</h3>
+    <p>Σε βοηθάει να φτιάξεις <strong>κλειστό κύκλωμα ινσουλίνης</strong> (AAPS + Nightscout) σε 5 βήματα.</p>
+    <h3>🔐 0 — Εγγραφή</h3><ol><li>Βάλε email + κωδικό.</li><li>Πάτα <strong>Εγγραφή</strong>.</li></ol>
+    <h3>🌙 1 — Nightscout</h3><ol><li>Διάλεξε subdomain (π.χ. <code>maria</code>).</li><li>Πάτα <strong>Δημιουργία</strong>.</li><li>Φύλαξε το API Secret — εμφανίζεται μία φορά!</li></ol>
+    <h3>🐙 2 — GitHub</h3><ol><li>Χρειάζεσαι δωρεάν λογαριασμό GitHub.</li><li>Πάτα <strong>Σύνδεση με GitHub</strong> → Authorize.</li><li>Μετά πάτα <strong>Δημιουργία Fork</strong>.</li></ol>
+    <div class="warn">Το AAPS χτίζεται στον δικό σου λογαριασμό. Εμείς δεν κρατάμε αντίγραφα.</div>
+    <h3>🔑 3 — Κλειδιά</h3><ol>
+      <li><strong>KEYSTORE_SET:</strong> Άνοιξε <a href="/prepare-key.html" target="_blank" style="color:var(--blue)">αυτή τη σελίδα</a> → Δημιουργία JKS → Αντιγραφή.</li>
+      <li><strong>GDRIVE_OAUTH2:</strong> <span class="badge badge-mobile">📱 μόνο από κινητό</span> Κατέβασε File Manager Plus, άνοιξε το aaps-ci-preparation.html, Start Auth → Copy.</li>
+      <li>Επικόλλησε και τα δύο → Αποθήκευση.</li>
+    </ol>
+    <h3>🔨 4 — Χτίσιμο</h3><ol><li>Πάτα <strong>Χτίσε</strong>.</li><li>Περιμένεις 20-40 λεπτά.</li><li>Το APK πάει στο Google Drive σου.</li></ol>
+    <h3>📱 5 — Εγκατάσταση</h3><ol><li>Κατέβασε APK από το Drive.</li><li>Ενεργοποίησε «Άγνωστες πηγές».</li><li>Εγκατέστησε + σύνδεσε με Nightscout.</li><li>Ακολούθησε τα Objectives.</li></ol>`;
+}
+
+// ─── UTILS ───
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => { if (btn) { btn.textContent = '✓ Αντιγράφηκε!'; btn.classList.add('copied'); setTimeout(() => { btn.textContent = '📋 Αντιγραφή'; btn.classList.remove('copied'); }, 2000); } }).catch(() => {});
+}
+
+// ─── INIT ───
+gotoStep(0);
+</script>
+</body>
+</html>
